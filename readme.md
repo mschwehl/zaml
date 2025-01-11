@@ -1,11 +1,11 @@
 
 # ZAML
-Zero Dependency Yaml Parser
+Zero Dependency Yaml Parser (using groovy)
 
-##Use Case
+## Use Case
 I need a simple way to merge Pod manifests for my Jenkins shared library. Ideas were taken from https://github.com/liejuntao001/jenkins-k8sagent-lib. I don't want to use SnakeYAML, so I wrote this super simple YAML merge tool.
 
-## Usecase
+## Usage
 
 look at ZamlParserTest
 

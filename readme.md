@@ -14,6 +14,7 @@ look at ZamlParserTest
    spec:
      containers:
      - name: jnlp
+       image: registry/image:__TAG__
        resources:
          limits:
            memory: 2Gi
@@ -22,16 +23,22 @@ look at ZamlParserTest
    '''
    
    def node = ZamlParse.parse(yaml)
+
+   #substitution
+   #def node = ZamlParse.parse(yaml,[__TAG__:'latest')
+      
    println ZamlParser.toYaml(node)
    node = ZamlParser.merge(node, other_node_to_be_parsed)
    println ZamlParser.toYaml(node)
 ```
 
      
+     
+     
 
 ##Limits
 This is not a parser but relies on valid YAML as input , and you have to use KNOWN YAMLs to merge .
-No anchors, multiline comments, and so on .
+No anchors, comments are removed 
 
-The data structure is straightforward, but the merge is just a quick hack for my use case.
+The data structure is straightforward, but the merge covers not all use cases. Just try out
 

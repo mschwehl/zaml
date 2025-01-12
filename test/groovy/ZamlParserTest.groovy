@@ -19,10 +19,13 @@ class ZamlParserTest {
 		def base = ZamlParser.parse("spec:")
 		println "starting with \n" + ZamlParser.toYaml(base)
 
+		Map substitutions = [:]
+		substitutions.put('${TAG}', 'someTag')
+		substitutions.put('${VALUE}', 'someValue')
 		specList.each { fragment ->
 
 			String yaml = new File('test/groovy/fragment/'+fragment+".yaml").text
-			def node = ZamlParser.parse(yaml)
+			def node = ZamlParser.parse(yaml,substitutions)
 
 			println "read \n" + ZamlParser.toYaml(node)
 			base = ZamlParser.merge(base, node)

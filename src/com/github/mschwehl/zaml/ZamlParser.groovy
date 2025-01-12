@@ -39,8 +39,16 @@ class ZamlParser {
 			}
 		}
 	}
+	
+	/**
+	 * Parse a YAML string into a YamlNode object.
+	 * Do substitutions if needed
+	 * @param yaml
+	 * @param substitutions
+	 * @return
+	 */
 
-	static YamlNode parse(String yaml) {
+	static YamlNode parse(String yaml, Map substitutions = [:]) {
 
 		// ignore empty lines and comments
 		def lines = yaml.readLines().  findAll { ! (it.trim().isEmpty() )}.collect { it }
@@ -76,7 +84,15 @@ class ZamlParser {
 			}
 
 			if (value) {
-				topNode.addElement(key, parseValue(value))
+				
+				String template = parseValue(value)
+				
+				// substitue
+				substitutions.each { a, b ->
+					template = template.replace(a,b)
+				}
+								
+				topNode.addElement(key,template)
 				continue
 			}
 

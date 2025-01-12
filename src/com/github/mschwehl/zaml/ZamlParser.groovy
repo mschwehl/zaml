@@ -60,11 +60,12 @@ class ZamlParser {
 		while (!lines.isEmpty()) {
 
 			def unformattedLine = lines.remove(0)
-			assert !unformattedLine.contains('\t') : "using Tab-Indentation at: ${unformattedLine} read yaml manual"
-			assert !unformattedLine.contains('#') :  "using comments: ${unformattedLine} this is not supported"
-			assert !unformattedLine.contains('&') :  "using anchors: ${unformattedLine} this is not supported"
+			// no tabs
+			assert !unformattedLine.contains('\t') : unformattedLine
+			
+			// ident even
 			int currentIndent = countIndent(unformattedLine)
-			assert currentIndent %2 == 0 : "uneven indentation at: ${unformattedLine} read yaml manual"
+			assert currentIndent %2 == 0 : unformattedLine
 
 			def line = unformattedLine.trim()
 			// go to correct position
@@ -86,7 +87,7 @@ class ZamlParser {
 			}
 
 			if (value) {
-				
+				assert !value.trim().startsWith("#") && !value.trim().startsWith("&") : "comment or acnchor after colon"
 				String template = parseValue(value)
 				
 				// substitue

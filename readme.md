@@ -38,7 +38,7 @@ look at ZamlParserTest
 
 ## Limits
 This is not a parser but relies on valid YAML as input , and you have to use KNOWN YAMLs to merge .
-No anchors, comments are removed 
+anchors and multiline are not supported, no comments after colon
 
 The data structure is straightforward, but the merge covers not all use cases. Just try out
 

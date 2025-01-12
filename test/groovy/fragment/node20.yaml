@@ -1,7 +1,7 @@
 spec:
   containers:
   - name: node
-    image: registry/node20:${TAG}
+    image: registry/node20:__TAG__
     command:
     - sleep
     args: [ 999999 ]

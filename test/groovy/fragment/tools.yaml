@@ -1,7 +1,7 @@
 spec:
   containers:
   - name: tools
-    image: registry/jenkins-tools:${TAG}
+    image: registry/jenkins-tools:__TAG__
     command:
     - sleep
     args: [ 999999 ]

@@ -20,8 +20,8 @@ class ZamlParserTest {
 		println "starting with \n" + ZamlParser.toYaml(base)
 
 		Map substitutions = [:]
-		substitutions.put('${TAG}', 'someTag')
-		substitutions.put('${VALUE}', 'someValue')
+		substitutions.put('__TAG__', 'someTag')
+		substitutions.put('__VALUE__', 'someValue')
 		specList.each { fragment ->
 
 			String yaml = new File('test/groovy/fragment/'+fragment+".yaml").text

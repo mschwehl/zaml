@@ -1,7 +1,7 @@
 spec:
   containers:
   - name: cypress
-    image: registry/cypress/included:${TAG}
+    image: registry/cypress/included:__TAG__
     command:
     - sleep
     args: [ 999999 ]

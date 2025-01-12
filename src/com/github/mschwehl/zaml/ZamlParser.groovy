@@ -19,9 +19,11 @@ class ZamlParser {
 			return value instanceof Map
 		}
 
+		/* Jenkins does not like this
 		public int hashCode(){
 			key.hashCode()
 		}
+		*/
 
 		String toString() {
 			return "YamlNode(key: $key, value: $value)"

@@ -2,4 +2,4 @@ spec:
   containers:
   - name: jnlp
   nodeSelector:
-    kubernetes.io/hostname: ${VALUE}
+    kubernetes.io/hostname: __VALUE__

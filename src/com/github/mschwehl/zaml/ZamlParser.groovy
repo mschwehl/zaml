@@ -58,7 +58,6 @@ class ZamlParser {
 		def stack = [rootNode]
 
 		while (!lines.isEmpty()) {
-
 			def unformattedLine = lines.remove(0)
 			// no tabs
 			assert !unformattedLine.contains('\t') : unformattedLine
@@ -66,18 +65,13 @@ class ZamlParser {
 			// ident even
 			int currentIndent = countIndent(unformattedLine)
 			assert currentIndent %2 == 0 : unformattedLine
-
 			def line = unformattedLine.trim()
 			// go to correct position
 			while( ( stack.size() * 2) > currentIndent + 2) {
 				stack.removeLast()
 			}
-
-
 			def topNode = stack[-1]
-
 			def (key, value) = line.split(":", 2).collect { it.trim() }
-
 			if (key.trim().startsWith("-")) {
 				def (listKey, listVal) = line.substring(1).trim().split(":", 2).collect { it.trim() }
 				def map = [:]
@@ -85,23 +79,18 @@ class ZamlParser {
 				topNode.value.add(map)
 				continue
 			}
-
 			if (value) {
 				assert !value.trim().startsWith("#") && !value.trim().startsWith("&") : "comment or acnchor after colon"
 				String template = parseValue(value)
-				
-				// substitue
 				substitutions.each { a, b ->
 					template = template.replace(a,b)
 				}
-								
 				topNode.addElement(key,template)
 				continue
 			}
-
 			def nextLine = lines.size() > 0 ? lines.first() : null
 			
-			// staring a list
+			// starting a list
 			if (nextLine && nextLine.trim().startsWith("-")) {
 				def node = new YamlNode(key: key, value: [])
 				topNode.addElement(key, node)
@@ -111,9 +100,7 @@ class ZamlParser {
 				topNode.addElement(key, node)
 				stack << node
 			}
-		
 		}
-
 		return rootNode
 	}
 
@@ -135,12 +122,10 @@ class ZamlParser {
 
 	static String toYaml(YamlNode node, int level = 0) {
 		StringBuilder yaml = new StringBuilder()
-
 		String indent = "  " * level
 
 		if (node.isMap()) {
 			node.value.eachWithIndex { k, v, index  ->
-
 				if(node.listNode && index == 0) {
 					yaml.append(" ${k}${v != null ? ":" : ""}")
 				} else {
@@ -168,107 +153,57 @@ class ZamlParser {
 			}
 		}
 
-		return yaml.toString()
+		return yaml.toString().trim()
 	}
 
 
 	static YamlNode merge(YamlNode base, YamlNode overlay) {
-		def mergedNode = new YamlNode(key: base.key, value: base.value instanceof List ? [] : [:])
-
-		if (base.isMap() && overlay.isMap()) {
-			// Merge both maps without overriding base values
-			base.value.each { k, v ->
-				def overlayValue = overlay.value[k]
-				if (overlayValue != null) {
-					if (v instanceof YamlNode && overlayValue instanceof YamlNode) {
-						// Recursively merge nested YamlNodes, appending overlay values
-						mergedNode.value[k] = merge(v, overlayValue)
-					} else if (v instanceof List && overlayValue instanceof List) {
-						// Merge lists by appending overlay values
-						mergedNode.value[k] = appendLists(v, overlayValue)
-					} else if (v instanceof Map && overlayValue instanceof Map) {
-						// Merge maps by appending overlay values
-						mergedNode.value[k] = appendMaps(v, overlayValue)
-					} else {
-						// Append overlay value to base value (if it's a simple value type)
-						mergedNode.value[k] = [v, overlayValue].flatten()
-					}
-				} else {
-					// If the key doesn't exist in overlay, append the base value
-					mergedNode.value[k] = v
-				}
-			}
-
-			// Add any new keys from overlay that are not in base
-			overlay.value.each { k, v ->
-				if (!base.value.containsKey(k)) {
-					mergedNode.value[k] = v
-				}
-			}
-		} else if (base.isList() && overlay.isList()) {
-			// Merge lists, preserving the unique elements and matching by 'name'
-			mergedNode.value = appendLists(base.value, overlay.value)
-		} else {
-			// For non-map, non-list types, append overlay value to base value
-			mergedNode.value = base.value + overlay.value
-		}
-
+		def mergedValue = deepCopy(base.value)
+		def mergedNode = new YamlNode(key: base.key, value: mergedValue)
+		mergeValues(mergedNode.value, overlay.value)
 		return mergedNode
 	}
 
-	// Helper method to append lists while ensuring no duplicates based on 'name'
-	private static List appendLists(List baseList, List overlayList) {
-		def mergedList = []
-		def baseNames = baseList.findAll { it instanceof Map }.collect { it["name"] }
-
-		// First, add all base items
-		mergedList.addAll(baseList)
-
-		// Now add overlay items, avoiding duplicates based on 'name'
-		overlayList.each { overlayItem ->
-			if (overlayItem instanceof Map && overlayItem.containsKey("name")) {
-				def match = baseList.find { it instanceof Map && it["name"] == overlayItem["name"] }
-				if (match) {
-					// Merge matching items
-					match.putAll(overlayItem)
+	private static def mergeValues(base, overlay) {
+		if (base instanceof Map && overlay instanceof Map) {
+			overlay.each { key, overlayValue ->
+				if (base.containsKey(key)) {
+					base[key] = mergeValues(base[key], overlayValue)
 				} else {
-					// Append new unique item
-					mergedList.add(overlayItem)
+					base[key] = deepCopy(overlayValue)
 				}
-			} else {
-				// Append non-map items
-				mergedList.add(overlayItem)
 			}
+			return base
+		} else if (base instanceof List && overlay instanceof List) {
+			overlay.each { overlayItem ->
+				if (overlayItem instanceof Map && overlayItem.name) {
+					def baseItem = base.find { it instanceof Map && it.name == overlayItem.name }
+					if (baseItem) {
+						mergeValues(baseItem, overlayItem)
+					} else {
+						base.add(deepCopy(overlayItem))
+					}
+				} else if (!base.contains(overlayItem)) {
+					base.add(deepCopy(overlayItem))
+				}
+			}
+			return base
+		} else if (base instanceof YamlNode && overlay instanceof YamlNode) {
+			return merge(base, overlay)
+		} else {
+			return deepCopy(overlay)
 		}
-
-		return mergedList
 	}
 
-	// Helper method to append maps by merging values without overriding
-	private static Map appendMaps(Map baseMap, Map overlayMap) {
-		def mergedMap = [:]
-
-		// Append baseMap values first
-		baseMap.each { k, v ->
-			mergedMap[k] = v
+	private static def deepCopy(Object original) {
+		if (original instanceof YamlNode) {
+			return new YamlNode(key: original.key, value: deepCopy(original.value), listNode: original.listNode)
+		} else if (original instanceof Map) {
+			return original.collectEntries { k, v -> [k, deepCopy(v)] }
+		} else if (original instanceof List) {
+			return original.collect { v -> deepCopy(v) }
+		} else {
+			return original
 		}
-
-		// Append overlayMap values, ensuring we don't overwrite
-		overlayMap.each { k, v ->
-			if (mergedMap.containsKey(k)) {
-				def mergedValue = mergedMap[k]
-				// If the value is a list, append the overlay value
-				if (mergedValue instanceof List && v instanceof List) {
-					mergedMap[k] = mergedValue + v
-				} else {
-					mergedMap[k] = [mergedValue, v].flatten()  // Flatten to handle scalar and list merging
-				}
-			} else {
-				mergedMap[k] = v
-			}
-		}
-
-		return mergedMap
 	}
-
 }
